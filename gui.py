@@ -37,6 +37,8 @@ class HashiGUI:
         # action history for undo: list of dicts with keys: a,b,lines,occupancy_cells
         self.history = []
         self.selected = None
+        # map line_id -> (island_a, island_b) for click-to-delete functionality
+        self.line_to_bridge = {}
 
         self.draw_grid()
         self.draw_islands()
@@ -63,6 +65,13 @@ class HashiGUI:
                     self.islands[(r, c)] = {'num': v, 'id': id_oval, 'text': id_text, 'bridges': {}}
 
     def on_click(self, event):
+        # Check if clicked on a bridge line first
+        clicked_item = self.canvas.find_closest(event.x, event.y)[0]
+        if clicked_item in self.line_to_bridge:
+            # User clicked on a bridge line - delete it
+            self.delete_bridge_by_line(clicked_item)
+            return
+        
         cell = self.pixel_to_cell(event.x, event.y)
         if not cell:
             return
@@ -79,6 +88,7 @@ class HashiGUI:
                 ok, msg = self.try_create_bridge(self.selected, cell)
                 if not ok:
                     print("No se puede crear puente:", msg)
+                    self.msg_label.config(text=msg)
                 else:
                     print("Puente creado")
                 self.unhighlight(self.selected)
@@ -105,6 +115,18 @@ class HashiGUI:
         (r2, c2) = b
         if r1 != r2 and c1 != c2:
             return False, "No alineadas (diagonal)"
+        
+        # Check if either island would exceed its capacity
+        ai = self.islands[a]
+        bi = self.islands[b]
+        used_a = sum(ai['bridges'].values())
+        used_b = sum(bi['bridges'].values())
+        
+        if used_a >= ai['num']:
+            return False, f"Isla {ai['num']} ya tiene {used_a} puentes (máximo permitido)"
+        if used_b >= bi['num']:
+            return False, f"Isla {bi['num']} ya tiene {used_b} puentes (máximo permitido)"
+        
         # determine direction and path
         if r1 == r2:
             # horizontal
@@ -125,8 +147,6 @@ class HashiGUI:
                 if occ['h'] > 0:
                     return False, "Cruza un puente horizontal existente"
         # check existing bridges count between these two
-        ai = self.islands[a]
-        bi = self.islands[b]
         key = b
         existing = ai['bridges'].get(key, 0)
         if existing >= 2:
@@ -164,6 +184,8 @@ class HashiGUI:
             else:
                 line_id = self.canvas.create_line(x1, y1, x2, y2, width=6, fill="#000")
             lines_ab = [line_id]
+            # Register line for click-to-delete
+            self.line_to_bridge[line_id] = (a, b)
         else:
             # second bridge: create two parallel lines and adjust first
             # offsets
@@ -180,6 +202,9 @@ class HashiGUI:
                 self.canvas.itemconfig(first, width=4)
                 second = self.canvas.create_line(x1 + off, y1, x2 + off, y2, width=4, fill="#000")
             lines_ab = [first, second]
+            # Register both lines for click-to-delete
+            self.line_to_bridge[first] = (a, b)
+            self.line_to_bridge[second] = (a, b)
 
         # store back
         ai['lines'][key] = lines_ab
@@ -245,6 +270,71 @@ class HashiGUI:
             del self.islands[b]['lines'][a]
         self.update_status()
         self.msg_label.config(text="Se deshizo el último puente")
+
+    def delete_bridge_by_line(self, line_id):
+        """Delete a bridge when user clicks on its line"""
+        if line_id not in self.line_to_bridge:
+            return
+        
+        a, b = self.line_to_bridge[line_id]
+        ai = self.islands[a]
+        bi = self.islands[b]
+        
+        # Get all lines for this bridge
+        lines = ai.get('lines', {}).get(b, [])
+        if not lines:
+            return
+        
+        # Find the history entry for this bridge (search backwards)
+        history_idx = None
+        for idx in range(len(self.history) - 1, -1, -1):
+            h = self.history[idx]
+            if h['a'] == a and h['b'] == b:
+                history_idx = idx
+                break
+        
+        if history_idx is None:
+            return
+        
+        # Get the history entry
+        hist_entry = self.history[history_idx]
+        
+        # Remove lines from canvas
+        for lid in hist_entry['lines']:
+            try:
+                self.canvas.delete(lid)
+                if lid in self.line_to_bridge:
+                    del self.line_to_bridge[lid]
+            except Exception:
+                pass
+        
+        # Decrement occupancy
+        for cell, t in hist_entry['occ_cells']:
+            occ = self.occupancy.get(cell)
+            if occ:
+                occ[t] = max(0, occ[t] - 1)
+        
+        # Decrement bridge counts
+        if b in ai['bridges']:
+            ai['bridges'][b] -= 1
+            if ai['bridges'][b] <= 0:
+                del ai['bridges'][b]
+        if a in bi['bridges']:
+            bi['bridges'][a] -= 1
+            if bi['bridges'][a] <= 0:
+                del bi['bridges'][a]
+        
+        # Remove lines storage
+        if 'lines' in ai and b in ai['lines']:
+            del ai['lines'][b]
+        if 'lines' in bi and a in bi['lines']:
+            del bi['lines'][a]
+        
+        # Remove from history
+        self.history.pop(history_idx)
+        
+        self.update_status()
+        self.msg_label.config(text="Puente eliminado")
 
     def check_victory(self):
         # check all islands satisfied their number
