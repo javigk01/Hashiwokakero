@@ -382,7 +382,7 @@ class HashiGUI:
             used = sum(info['bridges'].values())
             if used != info['num']:
                 return False
-        # Verificar conectividad vía BFS
+        # Verificar conectividad vía DFS
         # Construir adyacencia
         nodes = list(self.islands.keys())
         if not nodes:
@@ -391,7 +391,7 @@ class HashiGUI:
         for n, info in self.islands.items():
             for nb in info['bridges'].keys():
                 adj[n].add(nb)
-        # BFS
+        # DFS
         start = nodes[0]
         seen = {start}
         stack = [start]
