@@ -177,6 +177,13 @@ class HashiGUI:
         bi.setdefault('lines', {})
         lines_ab = ai['lines'].get(key, [])
 
+        # Fix: if existing count doesn't match actual lines, reset
+        if existing != len(lines_ab):
+            existing = len(lines_ab)
+            if existing == 0:
+                ai['bridges'][key] = 0
+                bi['bridges'][a] = 0
+
         if existing == 0:
             # first bridge: draw centered
             if r1 == r2:
