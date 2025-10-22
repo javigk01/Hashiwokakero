@@ -44,10 +44,6 @@ class HashiGUI:
         self.status_label = Label(self.status_frame, text="Puentes: 0\nSelección: -", 
                                   bg=COLOR_BG, fg=COLOR_ISLAND_TEXT, font=self.font_label, justify=LEFT)
         self.status_label.pack(padx=10, pady=10)
-        self.undo_button = Button(self.status_frame, text="Deshacer último puente", command=self.undo,
-                                   bg=COLOR_BUTTON_BG, fg=COLOR_BUTTON_FG, font=self.font_label,
-                                   relief="flat", padx=10, pady=5, cursor="hand2")
-        self.undo_button.pack(padx=10, pady=6)
         self.msg_label = Label(self.status_frame, text="", bg=COLOR_BG, fg=COLOR_ISLAND_TEXT, 
                                font=self.font_label, wraplength=150)
         self.msg_label.pack(padx=10, pady=6)
