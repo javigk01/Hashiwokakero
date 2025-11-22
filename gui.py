@@ -1,5 +1,7 @@
 from tkinter import Tk, Canvas, Frame, Label, Button, filedialog, LEFT, RIGHT, BOTH, font
 from game_logic import HashiGame
+from solver import HashiSolver
+from backtracking_solver import BacktrackingSolver
 
 # Constantes de visualización
 CELL_SIZE = 60
@@ -51,6 +53,22 @@ class HashiGUI:
         self.msg_label = Label(self.status_frame, text="", bg=COLOR_BG, fg=COLOR_ISLAND_TEXT, 
                                font=self.font_label, wraplength=150)
         self.msg_label.pack(padx=10, pady=6)
+        
+        # Botón de resolver/limpiar (CSP + Constraint Propagation)
+        self.solve_button = Button(self.status_frame, text="Resolver (CSP)", command=self.toggle_solve,
+                                   bg=COLOR_BUTTON_BG, fg=COLOR_BUTTON_FG, font=self.font_label,
+                                   relief="raised", padx=15, pady=5)
+        self.solve_button.pack(padx=10, pady=10)
+        
+        # Botón de resolver con backtracking puro
+        self.backtrack_button = Button(self.status_frame, text="Resolver (Backtracking)", command=self.toggle_backtrack,
+                                       bg="#E67E22", fg=COLOR_BUTTON_FG, font=self.font_label,
+                                       relief="raised", padx=15, pady=5)
+        self.backtrack_button.pack(padx=10, pady=5)
+        
+        # Estado del solver
+        self.is_solved = False
+        self.is_backtrack_solved = False
 
         # Datos de visualización (solo para GUI)
         self.islands_visual = {}  # (r,c) -> {'id':oval_id, 'text':text_id, 'lines':{(r2,c2): [line_ids]}}
@@ -309,3 +327,99 @@ class HashiGUI:
                 sel = f"{island_info['used']}/{island_info['num']}"
         
         self.status_label.config(text=f"Puentes: {total}\nSelección: {sel}")
+    
+    def toggle_solve(self):
+        """Alterna entre resolver el puzzle y limpiar el tablero (CSP)"""
+        if self.is_solved:
+            self.clear_all_bridges()
+            self.solve_button.config(text="Resolver (CSP)")
+            self.backtrack_button.config(state="normal")
+            self.msg_label.config(text="Tablero limpiado")
+            self.is_solved = False
+        else:
+            self.solve_puzzle()
+    
+    def toggle_backtrack(self):
+        """Alterna entre resolver el puzzle con backtracking y limpiar el tablero"""
+        if self.is_backtrack_solved:
+            self.clear_all_bridges()
+            self.backtrack_button.config(text="Resolver (Backtracking)")
+            self.solve_button.config(state="normal")
+            self.msg_label.config(text="Tablero limpiado")
+            self.is_backtrack_solved = False
+        else:
+            self.solve_puzzle_backtracking()
+    
+    def solve_puzzle(self):
+        """Resuelve el puzzle usando CSP + Constraint Propagation"""
+        self.msg_label.config(text="Resolviendo con CSP...")
+        self.master.update()  # Actualizar GUI para mostrar mensaje
+        
+        # Crear solver y resolver
+        solver = HashiSolver(self.game)
+        success, bridges = solver.solve()
+        
+        if success:
+            # Dibujar todos los puentes de la solución
+            for a, b in bridges:
+                success_create, msg, bridge_info = self.game.create_bridge(a, b)
+                if success_create:
+                    self.draw_bridge(bridge_info)
+            
+            self.update_status()
+            self.msg_label.config(text="¡Solución con CSP!")
+            self.solve_button.config(text="Limpiar")
+            self.backtrack_button.config(state="disabled")
+            self.is_solved = True
+        else:
+            self.msg_label.config(text="No se encontró solución")
+    
+    def solve_puzzle_backtracking(self):
+        """Resuelve el puzzle usando Backtracking Puro"""
+        self.msg_label.config(text="Resolviendo con Backtracking...")
+        self.master.update()  # Actualizar GUI para mostrar mensaje
+        
+        # Crear solver y resolver
+        solver = BacktrackingSolver(self.game)
+        success, bridges = solver.solve()
+        
+        if success:
+            # Dibujar todos los puentes de la solución
+            for a, b in bridges:
+                success_create, msg, bridge_info = self.game.create_bridge(a, b)
+                if success_create:
+                    self.draw_bridge(bridge_info)
+            
+            self.update_status()
+            iterations_text = f"Iteraciones: {solver.iterations}"
+            self.msg_label.config(text=f"¡Solución con Backtracking!\n{iterations_text}")
+            self.backtrack_button.config(text="Limpiar")
+            self.solve_button.config(state="disabled")
+            self.is_backtrack_solved = True
+        else:
+            self.msg_label.config(text=f"No se encontró solución\n(Iteraciones: {solver.iterations})")
+    
+    def clear_all_bridges(self):
+        """Limpia todos los puentes del tablero"""
+        # Eliminar todas las líneas visuales
+        for island_pos, visual_info in self.islands_visual.items():
+            if 'lines' in visual_info:
+                for neighbor, lines in list(visual_info['lines'].items()):
+                    for line_id in lines:
+                        try:
+                            self.canvas.delete(line_id)
+                            if line_id in self.line_to_bridge:
+                                del self.line_to_bridge[line_id]
+                        except Exception:
+                            pass
+                visual_info['lines'] = {}
+        
+        # Reinicializar la lógica del juego
+        self.game = HashiGame(self.rows, self.cols, self.board)
+        self.update_status()
+        
+        # Resetear estados de los botones
+        self.is_solved = False
+        self.is_backtrack_solved = False
+        self.solve_button.config(state="normal")
+        self.backtrack_button.config(state="normal")

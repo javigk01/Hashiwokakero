@@ -128,13 +128,14 @@ class HashiGame:
         
         return True, "OK"
     
-    def create_bridge(self, a, b):
+    def create_bridge(self, a, b, dry_run=False):
         """
         Crea un puente entre dos islas
         
         Args:
             a: tupla (r1, c1)
             b: tupla (r2, c2)
+            dry_run: si es True, solo verifica sin crear
             
         Returns:
             tupla (bool, str, dict) - (éxito, mensaje, info_puente)
@@ -143,6 +144,10 @@ class HashiGame:
         can_create, msg = self.can_create_bridge(a, b)
         if not can_create:
             return False, msg, None
+        
+        # Si es dry_run, retornar sin modificar el estado
+        if dry_run:
+            return True, "OK", None
         
         r1, c1 = a
         r2, c2 = b
