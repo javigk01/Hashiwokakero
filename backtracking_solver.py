@@ -19,7 +19,7 @@ class BacktrackingSolver:
         self.game = game
         self.solution_bridges = []
         self.iterations = 0
-        self.max_iterations = 50000  # Límite más alto para backtracking puro
+        self.max_iterations = 1000000  # Sin límite práctico
     
     def solve(self):
         """
@@ -31,14 +31,11 @@ class BacktrackingSolver:
         # Guardar estado inicial
         initial_state = self._save_state()
         
-        # Obtener lista de todas las islas
-        islands = list(self.game.islands.keys())
-        
-        # Ordenar islas por el número requerido (heurística simple: empezar con las más restrictivas)
-        islands.sort(key=lambda pos: self.game.islands[pos]['num'], reverse=True)
+        # Generar todos los pares posibles de islas que pueden conectarse
+        self.possible_connections = self._generate_possible_connections()
         
         # Intentar resolver recursivamente
-        success = self._backtrack(islands, 0)
+        success = self._backtrack()
         
         if success:
             # Recopilar todos los puentes de la solución
@@ -58,82 +55,185 @@ class BacktrackingSolver:
             self._restore_state(initial_state)
             return False, []
     
-    def _backtrack(self, islands, index):
+    def _generate_possible_connections(self):
+        """
+        Genera una lista de todas las posibles conexiones entre islas
+        Ordena por heurística: islas más restrictivas primero
+        
+        Returns:
+            list de tuplas (isla_a, isla_b, max_puentes_posibles)
+        """
+        connections = []
+        islands = list(self.game.islands.keys())
+        
+        for i, island_a in enumerate(islands):
+            for island_b in islands[i+1:]:
+                # Verificar si están alineadas
+                r1, c1 = island_a
+                r2, c2 = island_b
+                
+                if r1 == r2 or c1 == c2:  # Misma fila o columna
+                    # Verificar que no haya otra isla en el camino
+                    if self._path_is_clear(island_a, island_b):
+                        connections.append((island_a, island_b))
+        
+        # Ordenar conexiones por la suma de números requeridos (más restrictivas primero)
+        connections.sort(key=lambda conn: (
+            self.game.islands[conn[0]]['num'] + self.game.islands[conn[1]]['num']
+        ), reverse=True)
+        
+        return connections
+    
+    def _backtrack(self):
         """
         Función recursiva de backtracking
-        
-        Args:
-            islands: lista de posiciones de islas
-            index: índice de la isla actual
+        Prueba todas las combinaciones posibles de puentes
         
         Returns:
             bool - True si se encontró solución
         """
         self.iterations += 1
         
-        # Límite de seguridad
-        if self.iterations > self.max_iterations:
+        # Verificar si ya se encontró la solución
+        if self._is_solution():
+            return True
+        
+        # Verificar si el estado actual es inválido (poda temprana)
+        if self._is_invalid_state():
             return False
         
-        # Caso base: verificar si todas las islas están completas
-        if self._all_islands_complete():
-            # Verificar que el grafo esté conectado
-            if self._is_connected():
-                return True
+        # Encontrar la isla con menos opciones restantes (heurística MRV - Minimum Remaining Values)
+        island = self._select_island_with_min_remaining()
+        
+        if island is None:
+            # No hay más islas incompletas, pero no es solución
             return False
         
-        # Si hemos procesado todas las islas pero no están completas, fallo
-        if index >= len(islands):
-            return False
+        # Obtener vecinos válidos para esta isla
+        neighbors = self._get_valid_neighbors(island)
         
-        current_island = islands[index]
-        island_info = self.game.islands[current_island]
-        used = sum(island_info['bridges'].values())
-        
-        # Si esta isla ya está completa, pasar a la siguiente
-        if used == island_info['num']:
-            return self._backtrack(islands, index + 1)
-        
-        # Si esta isla tiene más puentes de los necesarios, fallo
-        if used > island_info['num']:
-            return False
-        
-        # Obtener vecinos válidos (en línea recta sin cruces)
-        neighbors = self._get_valid_neighbors(current_island)
-        
-        # Probar agregar puentes a cada vecino (0, 1 o 2 puentes)
+        # Probar agregar puentes a cada vecino
         for neighbor in neighbors:
-            # Intentar agregar 1 o 2 puentes
-            for bridge_count in [1, 2]:
+            # Probar con 0, 1 o 2 puentes (en orden)
+            for num_bridges in [1, 2]:
                 # Verificar si podemos agregar estos puentes
-                can_add = self._can_add_bridges(current_island, neighbor, bridge_count)
-                
-                if can_add:
+                if self._can_add_bridges(island, neighbor, num_bridges):
                     # Agregar puente(s)
-                    bridges_added = []
-                    for _ in range(bridge_count):
-                        success, msg, bridge_info = self.game.create_bridge(current_island, neighbor)
-                        if success:
-                            bridges_added.append((current_island, neighbor))
-                        else:
-                            # Deshacer puentes agregados en este intento
-                            for _ in bridges_added:
-                                self.game.delete_bridge(current_island, neighbor)
+                    added_successfully = True
+                    for _ in range(num_bridges):
+                        success, msg, bridge_info = self.game.create_bridge(island, neighbor)
+                        if not success:
+                            added_successfully = False
                             break
                     
-                    # Si se agregaron todos los puentes exitosamente
-                    if len(bridges_added) == bridge_count:
-                        # Recursión: intentar resolver el resto
-                        if self._backtrack(islands, index):
+                    if added_successfully:
+                        # Recursión: intentar resolver con este estado
+                        if self._backtrack():
                             return True
                         
                         # Backtrack: eliminar los puentes agregados
-                        for _ in range(bridge_count):
-                            self.game.delete_bridge(current_island, neighbor)
+                        for _ in range(num_bridges):
+                            self.game.delete_bridge(island, neighbor)
         
-        # También probar no agregar más puentes a esta isla (si es válido)
-        # Continuar con la siguiente isla
-        return self._backtrack(islands, index + 1)
+        # Si ninguna opción funcionó, retornar False
+        return False
+    
+    def _path_is_clear(self, island_a, island_b):
+        """
+        Verifica si el camino entre dos islas está libre de otras islas
+        
+        Args:
+            island_a: (r, c)
+            island_b: (r, c)
+        
+        Returns:
+            bool
+        """
+        r1, c1 = island_a
+        r2, c2 = island_b
+        
+        if r1 == r2:  # Horizontal
+            c_min, c_max = min(c1, c2), max(c1, c2)
+            for c in range(c_min + 1, c_max):
+                if self.game.board[r1][c] != 0:
+                    return False
+        elif c1 == c2:  # Vertical
+            r_min, r_max = min(r1, r2), max(r1, r2)
+            for r in range(r_min + 1, r_max):
+                if self.game.board[r][c1] != 0:
+                    return False
+        else:
+            return False
+        
+        return True
+    
+    def _select_island_with_min_remaining(self):
+        """
+        Selecciona la isla con menos puentes restantes por colocar (heurística MRV)
+        Esto reduce el factor de ramificación y hace el backtracking más eficiente
+        
+        Returns:
+            (r, c) o None si todas las islas están completas
+        """
+        min_remaining = float('inf')
+        selected_island = None
+        
+        for pos, info in self.game.islands.items():
+            used = sum(info['bridges'].values())
+            remaining = info['num'] - used
+            
+            if remaining > 0 and remaining < min_remaining:
+                min_remaining = remaining
+                selected_island = pos
+        
+        return selected_island
+    
+    def _is_solution(self):
+        """
+        Verifica si el estado actual es una solución válida
+        
+        Returns:
+            bool
+        """
+        # Todas las islas deben estar completas
+        if not self._all_islands_complete():
+            return False
+        
+        # El grafo debe estar conectado
+        if not self._is_connected():
+            return False
+        
+        return True
+    
+    def _is_invalid_state(self):
+        """
+        Verifica si el estado actual es inválido (poda temprana)
+        Esto permite cortar ramas del árbol de búsqueda temprano
+        
+        Returns:
+            bool - True si el estado es inválido
+        """
+        for pos, info in self.game.islands.items():
+            used = sum(info['bridges'].values())
+            
+            # Si una isla tiene más puentes de los necesarios, estado inválido
+            if used > info['num']:
+                return True
+            
+            # Si una isla no puede completarse (no tiene suficientes vecinos disponibles)
+            remaining = info['num'] - used
+            if remaining > 0:
+                # Contar cuántos puentes más se pueden agregar desde esta isla
+                max_addable = 0
+                neighbors = self._get_valid_neighbors(pos)
+                for neighbor in neighbors:
+                    current_bridges = info['bridges'].get(neighbor, 0)
+                    max_addable += (2 - current_bridges)  # Máximo 2 puentes por conexión
+                
+                if max_addable < remaining:
+                    return True
+        
+        return False
     
     def _all_islands_complete(self):
         """Verifica si todas las islas tienen el número correcto de puentes"""
