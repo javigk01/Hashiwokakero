@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-11-26T17:25:35.610689",
+  "description": "Comparación de rendimiento entre CSP y Backtracking en Hashiwokakero",
+  "board_size": "7x7",
+  "test_cases": [
+    {
+      "name": "Simple 1",
+      "file": "../puzzles/test_simple1.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/test_simple1.txt'"
+    },
+    {
+      "name": "Simple 2",
+      "file": "../puzzles/test_simple2.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/test_simple2.txt'"
+    },
+    {
+      "name": "Fácil",
+      "file": "../puzzles/test_easy.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/test_easy.txt'"
+    },
+    {
+      "name": "Moderado 1",
+      "file": "../puzzles/test_moderate1.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/test_moderate1.txt'"
+    },
+    {
+      "name": "Moderado 2",
+      "file": "../puzzles/test_moderate2.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/test_moderate2.txt'"
+    },
+    {
+      "name": "Difícil",
+      "file": "../puzzles/test_hard.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/test_hard.txt'"
+    },
+    {
+      "name": "Ejemplo Base",
+      "file": "../puzzles/example.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/example.txt'"
+    },
+    {
+      "name": "Hash Test",
+      "file": "../puzzles/hashitest.txt",
+      "error": "[Errno 2] No such file or directory: '../puzzles/hashitest.txt'"
+    }
+  ],
+  "summary": {
+    "total_tests": 8,
+    "both_solved": 0,
+    "both_failed": 0,
+    "csp_wins": 0,
+    "backtracking_wins": 0,
+    "total_csp_time_ms": 0,
+    "total_bt_time_ms": 0,
+    "average_speedup": null
+  }
+}

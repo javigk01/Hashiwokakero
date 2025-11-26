@@ -10,7 +10,7 @@ if __name__ == "__main__":
     root.configure(bg=COLOR_BG)
 
     # Buscar archivo de ejemplo en el directorio
-    default_path = os.path.join(os.path.dirname(__file__), "example.txt")
+    default_path = os.path.join(os.path.dirname(__file__), "puzzles", "example.txt")
     if len(sys.argv) > 1:
         path = sys.argv[1]
     elif os.path.exists(default_path):

@@ -1,10 +1,14 @@
 """
 Script para ejecutar todas las pruebas unitarias
-Ejecutar con: py run_all_tests.py
+Ejecutar con: py tests/run_all_tests.py desde la raíz del proyecto
 """
 
 import unittest
 import sys
+import os
+
+# Agregar el directorio padre al path para imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Importar todos los módulos de pruebas
 import test_game_logic

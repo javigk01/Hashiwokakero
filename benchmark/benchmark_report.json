@@ -1,0 +1,185 @@
+{
+  "timestamp": "2025-11-26T17:29:17.408604",
+  "description": "Comparación de rendimiento entre CSP y Backtracking en Hashiwokakero",
+  "board_size": "7x7",
+  "test_cases": [
+    {
+      "name": "Simple 1",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\test_simple1.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 12,
+      "csp": {
+        "success": true,
+        "time_ms": 2.75,
+        "iterations": 7
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 50.19,
+        "iterations": 590
+      },
+      "comparison": {
+        "speedup": 18.26,
+        "iteration_ratio": 84.29,
+        "faster": "CSP"
+      }
+    },
+    {
+      "name": "Simple 2",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\test_simple2.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 12,
+      "csp": {
+        "success": false,
+        "time_ms": 1.68,
+        "iterations": 5
+      },
+      "backtracking": {
+        "success": false,
+        "time_ms": 14.37,
+        "iterations": 162
+      },
+      "comparison": {
+        "speedup": null,
+        "iteration_ratio": null,
+        "faster": null
+      }
+    },
+    {
+      "name": "Fácil",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\test_easy.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 10,
+      "csp": {
+        "success": true,
+        "time_ms": 2.95,
+        "iterations": 6
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 12.44,
+        "iterations": 133
+      },
+      "comparison": {
+        "speedup": 4.22,
+        "iteration_ratio": 22.17,
+        "faster": "CSP"
+      }
+    },
+    {
+      "name": "Moderado 1",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\test_moderate1.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 12,
+      "csp": {
+        "success": true,
+        "time_ms": 5.35,
+        "iterations": 7
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 9.87,
+        "iterations": 95
+      },
+      "comparison": {
+        "speedup": 1.84,
+        "iteration_ratio": 13.57,
+        "faster": "CSP"
+      }
+    },
+    {
+      "name": "Moderado 2",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\test_moderate2.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 14,
+      "csp": {
+        "success": false,
+        "time_ms": 3.93,
+        "iterations": 5
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 34.35,
+        "iterations": 284
+      },
+      "comparison": {
+        "speedup": null,
+        "iteration_ratio": null,
+        "faster": null
+      }
+    },
+    {
+      "name": "Difícil",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\test_hard.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 16,
+      "csp": {
+        "success": true,
+        "time_ms": 8.15,
+        "iterations": 14
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 74.76,
+        "iterations": 928
+      },
+      "comparison": {
+        "speedup": 9.17,
+        "iteration_ratio": 66.29,
+        "faster": "CSP"
+      }
+    },
+    {
+      "name": "Ejemplo Base",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\example.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 24,
+      "csp": {
+        "success": true,
+        "time_ms": 2.56,
+        "iterations": 4
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 238.32,
+        "iterations": 2244
+      },
+      "comparison": {
+        "speedup": 93.23,
+        "iteration_ratio": 561.0,
+        "faster": "CSP"
+      }
+    },
+    {
+      "name": "Hash Test",
+      "file": "C:\\Users\\javie\\OneDrive\\Documentos\\unijaveriana\\SEMESTRE 6\\Analisis de Algoritmos\\Hashiwokakero\\puzzles\\hashitest.txt",
+      "board_dimensions": "7x7",
+      "num_islands": 14,
+      "csp": {
+        "success": true,
+        "time_ms": 1.81,
+        "iterations": 4
+      },
+      "backtracking": {
+        "success": true,
+        "time_ms": 8.08,
+        "iterations": 107
+      },
+      "comparison": {
+        "speedup": 4.45,
+        "iteration_ratio": 26.75,
+        "faster": "CSP"
+      }
+    }
+  ],
+  "summary": {
+    "total_tests": 8,
+    "both_solved": 6,
+    "both_failed": 1,
+    "csp_wins": 6,
+    "backtracking_wins": 0,
+    "total_csp_time_ms": 23.57,
+    "total_bt_time_ms": 393.65,
+    "average_speedup": 16.7
+  }
+}
